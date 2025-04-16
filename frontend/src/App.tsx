@@ -1,6 +1,6 @@
 import { Routes, Route, Link } from "react-router-dom";
 import "./App.css";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import FileUpload from "./components/FileUpload";
 
 function Home() {
@@ -8,7 +8,7 @@ function Home() {
   useEffect(() => {
     fetch("http://localhost:8000/api/hello/")
       .then((response) => response.text())
-      .then((data) => setMessage(data));
+      .then((data) => console.log(data));
   }, []);
   return (
     <div className="page-container">

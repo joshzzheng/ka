@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import "./FileUpload.css";
 
 interface UploadedFile {
@@ -13,6 +13,30 @@ function FileUpload() {
   const [uploadStatus, setUploadStatus] = useState<{ [key: string]: string }>(
     {}
   );
+
+  useEffect(() => {
+    // Fetch initial files from the specified folder
+    const fetchInitialFiles = async () => {
+      try {
+        const response = await fetch("http://localhost:8000/api/list-files/");
+        if (!response.ok) {
+          throw new Error("Failed to fetch files");
+        }
+        const files = await response.json();
+        setUploadedFiles(
+          files.map((file: any) => ({
+            id: Math.random().toString(36).substr(2, 9),
+            name: file.name,
+            size: file.size,
+          }))
+        );
+      } catch (error) {
+        console.error("Error fetching initial files:", error);
+      }
+    };
+
+    fetchInitialFiles();
+  }, []);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
