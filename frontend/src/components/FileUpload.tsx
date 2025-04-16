@@ -7,12 +7,18 @@ interface UploadedFile {
   size: number;
 }
 
+interface FileResponse {
+  name: string;
+  size: number;
+}
+
 function FileUpload() {
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<{ [key: string]: string }>(
     {}
   );
+  const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
     // Fetch initial files from the specified folder
@@ -24,7 +30,7 @@ function FileUpload() {
         }
         const files = await response.json();
         setUploadedFiles(
-          files.map((file: any) => ({
+          files.map((file: FileResponse) => ({
             id: Math.random().toString(36).substr(2, 9),
             name: file.name,
             size: file.size,
@@ -37,6 +43,57 @@ function FileUpload() {
 
     fetchInitialFiles();
   }, []);
+
+  const handleClearContext = async () => {
+    try {
+      setIsProcessing(true);
+      const response = await fetch(
+        "http://localhost:8000/api/clear-documents/",
+        {
+          method: "POST",
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to clear documents");
+      }
+
+      alert("Documents collection cleared successfully");
+    } catch (error) {
+      console.error("Error clearing documents:", error);
+      alert("Failed to clear documents");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleIngestFiles = async () => {
+    if (uploadedFiles.length === 0) {
+      alert("No files to ingest");
+      return;
+    }
+
+    try {
+      setIsProcessing(true);
+      const response = await fetch(
+        "http://localhost:8000/api/ingest-documents/",
+        {
+          method: "POST",
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to ingest documents");
+      }
+
+      alert("Files ingested successfully");
+    } catch (error) {
+      console.error("Error ingesting files:", error);
+      alert("Failed to ingest files");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -148,6 +205,22 @@ function FileUpload() {
         />
         <button onClick={() => document.getElementById("file-input")?.click()}>
           Choose Files
+        </button>
+      </div>
+      <div className="action-buttons-container">
+        <button
+          className="action-button clear-button"
+          onClick={handleClearContext}
+          disabled={isProcessing}
+        >
+          {isProcessing ? "Processing..." : "Clear context"}
+        </button>
+        <button
+          className="action-button ingest-button"
+          onClick={handleIngestFiles}
+          disabled={isProcessing}
+        >
+          {isProcessing ? "Processing..." : "Ingest files"}
         </button>
       </div>
     </div>

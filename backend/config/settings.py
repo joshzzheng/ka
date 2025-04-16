@@ -127,5 +127,8 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 CORS_ALLOWED_ORIGINS = [
+    #"http://localhost:3000",  # React default port
     "http://localhost:5173",  # Vite default port
 ]
+
+CORS_ALLOW_CREDENTIALS = True
