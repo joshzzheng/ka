@@ -64,53 +64,6 @@ def upload_file(request):
     return Response({'message': 'File uploaded successfully', 'filename': file.name})
 
 @api_view(['POST'])
-def process_documents(request):
-    """
-    Process all documents in the upload directory and store them in Qdrant.
-    """
-    upload_dir = '/Users/joshzheng/Downloads/test-uploads'
-    
-    try:
-        success = document_manager.ingest_documents(upload_dir)
-        if success:
-            return Response({'message': 'Documents processed and stored successfully'})
-        return Response({'error': 'Failed to process documents'}, status=500)
-    except Exception as e:
-        return Response({'error': str(e)}, status=500)
-
-@api_view(['GET'])
-def query_documents(request):
-    """
-    Query documents and get an answer based on the provided query.
-    """
-    query = request.GET.get('query', '')
-    if not query:
-        return Response({'error': 'No query provided'}, status=400)
-    
-    try:
-        answer = document_manager.generate_answer(query)
-        return Response({'answer': answer})
-    except Exception as e:
-        return Response({'error': str(e)}, status=500)
-
-@api_view(['GET'])
-def search_documents(request):
-    """
-    Search for relevant documents based on the query.
-    """
-    query = request.GET.get('query', '')
-    limit = int(request.GET.get('limit', 3))
-    
-    if not query:
-        return Response({'error': 'No query provided'}, status=400)
-    
-    try:
-        documents = document_manager.get_relevant_documents(query, limit=limit)
-        return Response({'documents': documents})
-    except Exception as e:
-        return Response({'error': str(e)}, status=500)
-
-@api_view(['POST'])
 def chat(request):
     try:
         message = request.data.get('message')

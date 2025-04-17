@@ -88,7 +88,8 @@ class DocumentManager:
         # Combine embeddings with original documents
         for i, doc in enumerate(split_docs):
             doc.metadata['embedding'] = embeddings[i]
-        
+
+
         return split_docs
     
     def ingest_documents(self, upload_dir: str) -> bool:
@@ -153,26 +154,42 @@ class DocumentManager:
         )
         return response.data[0].embedding
     
-    def get_relevant_documents(self, query: str, limit: int = 3) -> List[str]:
+    def get_relevant_documents(self, query: str, limit: int = 3, score_threshold: float = 0.7) -> List[str]:
         """
         Retrieve relevant documents from Qdrant based on the query.
         
         Args:
             query: The search query
             limit: Maximum number of documents to return
+            score_threshold: Minimum similarity score to consider a document relevant
             
         Returns:
             List of relevant document texts
         """
+        logger.info(f"Searching for documents with query: {query}")
         query_embedding = self.get_embedding(query)
         
         search_results = self.qdrant_client.search(
             collection_name=self.collection_name,
             query_vector=query_embedding,
-            limit=limit
+            limit=limit,
+            score_threshold=score_threshold
         )
+
+        # Log search results for debugging
+        logger.info(f"Found {len(search_results)} results")
+        for i, hit in enumerate(search_results):
+            logger.info(f"Result {i+1}: Score={hit.score:.4f}")
+            logger.debug(f"Content preview: {hit.payload['text'][:200]}...")
         
-        return [hit.payload["text"] for hit in search_results]
+        # Filter results by score threshold and return only relevant ones
+        relevant_results = [hit.payload["text"] for hit in search_results if hit.score >= score_threshold]
+        
+        if not relevant_results:
+            logger.warning(f"No relevant documents found for query: {query}")
+            return []
+            
+        return relevant_results
     
     def generate_answer(self, query: str, context: Optional[List[str]] = None) -> str:
         """
