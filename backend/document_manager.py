@@ -80,16 +80,17 @@ class DocumentManager:
             length_function=len,
         )
         split_docs = text_splitter.split_documents(documents)
+        logger.info(f"Split documents into {len(split_docs)} chunks")
         
         # Convert documents to embeddings
-        texts = [doc.page_content for doc in split_docs]
+        texts = [doc.page_content for doc in split_docs]        
         embeddings = self.embedding_model.embed_documents(texts)
         
         # Combine embeddings with original documents
         for i, doc in enumerate(split_docs):
             doc.metadata['embedding'] = embeddings[i]
-
-
+            
+        logger.info("Successfully combined embeddings with documents")
         return split_docs
     
     def ingest_documents(self, upload_dir: str) -> bool:
@@ -117,16 +118,47 @@ class DocumentManager:
         
         try:
             # Load and process documents
+            logger.info(f"Found {len(file_paths)} files to process")
+            for file_path in file_paths:
+                logger.info(f"Processing file: {file_path}")
+            
             documents = self.load_documents([str(p) for p in file_paths])
-            processed_docs = self.process_documents(documents)
+            logger.info(f"Loaded {len(documents)} documents")
+            
+            # Split documents into chunks
+            text_splitter = RecursiveCharacterTextSplitter(
+                chunk_size=1000,
+                chunk_overlap=200,
+                length_function=len,
+            )
+            split_docs = text_splitter.split_documents(documents)
+            logger.info(f"Split into {len(split_docs)} chunks")
+            
+            # Convert documents to embeddings
+            texts = [doc.page_content for doc in split_docs]
+            logger.info(f"Generating embeddings for {len(texts)} text chunks")
+            logger.info(f"Sample text chunk: {texts[0][:200]}")
+            
+            # Generate embeddings directly with OpenAI API for more control
+            embeddings = []
+            for text in texts:
+                response = self.openai_client.embeddings.create(
+                    model="text-embedding-3-small",
+                    input=text
+                )
+                embeddings.append(response.data[0].embedding)
+                
+            logger.info(f"Generated {len(embeddings)} embeddings")
+            logger.info(f"First embedding size: {len(embeddings[0])}")
+            logger.info(f"First embedding sample: {embeddings[0][:5]}")
             
             # Prepare points for Qdrant
             points = []
-            for i, doc in enumerate(processed_docs):
+            for i, (doc, embedding) in enumerate(zip(split_docs, embeddings)):
                 points.append(
                     models.PointStruct(
                         id=i,
-                        vector=doc.metadata['embedding'],
+                        vector=embedding,  # Use the embedding directly
                         payload={
                             "text": doc.page_content,
                             "metadata": doc.metadata
@@ -134,12 +166,38 @@ class DocumentManager:
                     )
                 )
             
+            # Log sample points
+            logger.info(f"Created {len(points)} points for Qdrant")
+            if points:
+                logger.info(f"Sample point:")
+                logger.info(f"ID: {points[0].id}")
+                logger.info(f"Vector size: {len(points[0].vector)}")
+                logger.info(f"Payload preview: {str(points[0].payload)[:200]}...")
+            
             # Upload points to Qdrant
             self.qdrant_client.upsert(
                 collection_name=self.collection_name,
                 points=points
             )
             logger.info(f"Successfully stored {len(points)} document chunks in Qdrant")
+            
+            # Verify ingestion with a test search
+            test_query = "What is this document about?"
+            test_embedding = self.get_embedding(test_query)
+            test_results = self.qdrant_client.search(
+                collection_name=self.collection_name,
+                query_vector=test_embedding,
+                limit=1,
+                score_threshold=0.0  # No threshold for testing
+            )
+            
+            if test_results:
+                logger.info("Test search successful")
+                logger.info(f"Found {len(test_results)} results")
+                logger.info(f"Top result score: {test_results[0].score}")
+            else:
+                logger.error("Test search failed - no results found")
+            
             return True
             
         except Exception as e:
@@ -154,7 +212,7 @@ class DocumentManager:
         )
         return response.data[0].embedding
     
-    def get_relevant_documents(self, query: str, limit: int = 3, score_threshold: float = 0.7) -> List[str]:
+    def get_relevant_documents(self, query: str, limit: int = 5, score_threshold: float = 0.1) -> List[str]:
         """
         Retrieve relevant documents from Qdrant based on the query.
         
@@ -169,27 +227,36 @@ class DocumentManager:
         logger.info(f"Searching for documents with query: {query}")
         query_embedding = self.get_embedding(query)
         
+        # Get all points first to check what's available
+        all_points = self.qdrant_client.scroll(
+            collection_name=self.collection_name,
+            limit=10
+        )
+        logger.info(f"Total available points: {len(all_points[0])}")
+        if all_points[0]:
+            logger.info("Sample point content:")
+            logger.info(all_points[0][0].payload["text"][:200])
+        
+        # Use exact search with lower score threshold
         search_results = self.qdrant_client.search(
             collection_name=self.collection_name,
             query_vector=query_embedding,
             limit=limit,
-            score_threshold=score_threshold
+            score_threshold=score_threshold,
+            search_params=models.SearchParams(
+                exact=True,  # Use exact search
+                hnsw_ef=128  # Increase search accuracy
+            )
         )
 
         # Log search results for debugging
         logger.info(f"Found {len(search_results)} results")
         for i, hit in enumerate(search_results):
             logger.info(f"Result {i+1}: Score={hit.score:.4f}")
-            logger.debug(f"Content preview: {hit.payload['text'][:200]}...")
+            logger.info(f"Content preview: {hit.payload['text'][:200]}...")
         
-        # Filter results by score threshold and return only relevant ones
-        relevant_results = [hit.payload["text"] for hit in search_results if hit.score >= score_threshold]
-        
-        if not relevant_results:
-            logger.warning(f"No relevant documents found for query: {query}")
-            return []
-            
-        return relevant_results
+        # Return all results without additional filtering
+        return [hit.payload["text"] for hit in search_results]
     
     def generate_answer(self, query: str, context: Optional[List[str]] = None) -> str:
         """

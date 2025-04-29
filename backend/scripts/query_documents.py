@@ -20,21 +20,29 @@ def main():
     # Initialize DocumentManager
     doc_manager = DocumentManager()
     
-    # Initial prompt
-    query = "What are these documents about?"
+    # Test queries
+    queries = [
+        "What is this document about?",
+        "What are the main topics covered?",
+        "Tell me about the FAQ content"
+    ]
     
-    # Generate answer using DocumentManager
-    answer = doc_manager.generate_answer(query)
-    
-    print("\nQuestion:", query)
-    print("\nAnswer:", answer)
-    
-    # Get and print the context used
-    context = doc_manager.get_relevant_documents(query)
-    print("\nContext used:")
-    for i, doc in enumerate(context, 1):
-        print(f"\nDocument {i}:")
-        print(doc)
+    for query in queries:
+        print(f"\n{'='*50}")
+        print(f"Query: {query}")
+        print(f"{'='*50}")
+        
+        # Get relevant documents
+        context = doc_manager.get_relevant_documents(query)
+        print(f"\nFound {len(context)} relevant documents:")
+        
+        for i, doc in enumerate(context, 1):
+            print(f"\nDocument {i}:")
+            print(doc[:200] + "...")
+        
+        # Generate answer
+        answer = doc_manager.generate_answer(query)
+        print(f"\nAnswer: {answer}")
 
 if __name__ == "__main__":
     main() 

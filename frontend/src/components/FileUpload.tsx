@@ -165,7 +165,7 @@ function FileUpload() {
   };
 
   return (
-    <div className="w-1/3 h-full p-5 flex flex-col gap-5">
+    <div className="flex flex-col h-full gap-5">
       <div className="h-1/2 bg-[#1a1a1a] rounded-lg p-4 min-h-[100px]">
         <h3 className="mt-0 mb-2.5">Uploaded Files</h3>
         {uploadedFiles.length === 0 ? (
