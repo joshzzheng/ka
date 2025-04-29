@@ -62,7 +62,7 @@ const ChatInterface: React.FC = () => {
 
   return (
     <div className="flex flex-col h-full bg-[#1a1a1a] rounded-lg pt-5 shadow-md">
-      <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-3">
+      <div className="flex-1 overflow-y-auto max-h-150 p-5 flex flex-col gap-3">
         {messages.map((message) => (
           <div
             key={message.id}

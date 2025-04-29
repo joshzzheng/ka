@@ -136,8 +136,6 @@ class DocumentManager:
             
             # Convert documents to embeddings
             texts = [doc.page_content for doc in split_docs]
-            logger.info(f"Generating embeddings for {len(texts)} text chunks")
-            logger.info(f"Sample text chunk: {texts[0][:200]}")
             
             # Generate embeddings directly with OpenAI API for more control
             embeddings = []
@@ -165,14 +163,7 @@ class DocumentManager:
                         }
                     )
                 )
-            
-            # Log sample points
-            logger.info(f"Created {len(points)} points for Qdrant")
-            if points:
-                logger.info(f"Sample point:")
-                logger.info(f"ID: {points[0].id}")
-                logger.info(f"Vector size: {len(points[0].vector)}")
-                logger.info(f"Payload preview: {str(points[0].payload)[:200]}...")
+        
             
             # Upload points to Qdrant
             self.qdrant_client.upsert(
