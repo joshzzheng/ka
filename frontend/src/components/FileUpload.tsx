@@ -1,5 +1,4 @@
 import { useState, useCallback, useEffect } from "react";
-import "./FileUpload.css";
 
 interface UploadedFile {
   id: string;
@@ -166,21 +165,24 @@ function FileUpload() {
   };
 
   return (
-    <div className="file-upload-container">
-      <div className="uploaded-files">
-        <h3>Uploaded Files</h3>
+    <div className="w-1/3 h-full p-5 flex flex-col gap-5">
+      <div className="h-1/2 bg-[#1a1a1a] rounded-lg p-4 min-h-[100px]">
+        <h3 className="mt-0 mb-2.5">Uploaded Files</h3>
         {uploadedFiles.length === 0 ? (
           <p>No files uploaded yet</p>
         ) : (
-          <ul>
+          <ul className="list-none p-0 m-0">
             {uploadedFiles.map((file) => (
-              <li key={file.id}>
+              <li
+                key={file.id}
+                className="py-1.5 border-b border-[#333] flex justify-between items-center last:border-b-0"
+              >
                 {file.name} ({(file.size / 1024).toFixed(2)} KB)
                 {uploadStatus[file.name] === "success" && (
-                  <span className="upload-success">✓</span>
+                  <span className="text-[#4caf50] ml-2.5">✓</span>
                 )}
                 {uploadStatus[file.name] === "error" && (
-                  <span className="upload-error">✗</span>
+                  <span className="text-[#f44336] ml-2.5">✗</span>
                 )}
               </li>
             ))}
@@ -189,34 +191,39 @@ function FileUpload() {
       </div>
 
       <div
-        className={`drop-zone ${isDragging ? "dragging" : ""}`}
+        className={`flex-1 border-2 border-dashed rounded-lg flex flex-col items-center justify-center p-5 bg-[#1a1a1a] transition-all duration-300 ${
+          isDragging ? "border-[#535bf2] bg-[#242424]" : "border-[#646cff]"
+        }`}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
       >
-        <p>Drag and drop files here</p>
+        <p className="my-1">Drag and drop files here</p>
         <p>or</p>
         <input
           type="file"
           id="file-input"
           multiple
           onChange={handleFileInput}
-          style={{ display: "none" }}
+          className="hidden"
         />
-        <button onClick={() => document.getElementById("file-input")?.click()}>
+        <button
+          onClick={() => document.getElementById("file-input")?.click()}
+          className="mt-2.5 bg-[#646cff] text-white px-4 py-2 rounded hover:bg-[#535bf2]"
+        >
           Choose Files
         </button>
       </div>
-      <div className="action-buttons-container">
+      <div className="h-[200px] flex flex-col gap-2.5 p-4 bg-[#1a1a1a] rounded-lg">
         <button
-          className="action-button clear-button"
+          className="flex-1 p-2.5 border-none rounded text-base cursor-pointer transition-colors duration-300 bg-[#f44336] text-white hover:bg-[#d32f2f] disabled:opacity-50"
           onClick={handleClearContext}
           disabled={isProcessing}
         >
           {isProcessing ? "Processing..." : "Clear context"}
         </button>
         <button
-          className="action-button ingest-button"
+          className="flex-1 p-2.5 border-none rounded text-base cursor-pointer transition-colors duration-300 bg-[#4caf50] text-white hover:bg-[#388e3c] disabled:opacity-50"
           onClick={handleIngestFiles}
           disabled={isProcessing}
         >

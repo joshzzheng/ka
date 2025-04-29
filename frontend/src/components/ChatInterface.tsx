@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import "./ChatInterface.css";
 
 interface Message {
   id: number;
@@ -62,38 +61,47 @@ const ChatInterface: React.FC = () => {
   };
 
   return (
-    <div className="chat-container">
-      <div className="messages-container">
+    <div className="flex flex-col h-full max-w-3xl mx-auto bg-[#1a1a1a] rounded-lg shadow-md">
+      <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-3">
         {messages.map((message) => (
           <div
             key={message.id}
-            className={`message ${
-              message.sender === "user" ? "user-message" : "bot-message"
+            className={`max-w-[70%] p-3 rounded-xl mb-2 ${
+              message.sender === "user"
+                ? "bg-[#646cff] text-white self-end"
+                : "bg-[#f0f0f0] text-[#333] self-start"
             }`}
           >
-            <div className="message-content">
-              <p>{message.text}</p>
+            <div className="flex flex-col">
+              <p className="m-0 break-words">{message.text}</p>
             </div>
           </div>
         ))}
         {isLoading && (
-          <div className="message bot-message">
-            <div className="message-content">
-              <p>Thinking...</p>
+          <div className="max-w-[70%] p-3 rounded-xl mb-2 bg-[#f0f0f0] text-[#333] self-start">
+            <div className="flex flex-col">
+              <p className="m-0">Thinking...</p>
             </div>
           </div>
         )}
       </div>
-      <form onSubmit={handleSendMessage} className="message-input-container">
+      <form
+        onSubmit={handleSendMessage}
+        className="flex p-4 border-t border-[#e0e0e0] bg-[#1a1a1a]"
+      >
         <input
           type="text"
           value={inputMessage}
           onChange={(e) => setInputMessage(e.target.value)}
           placeholder="Type a message..."
-          className="message-input"
+          className="flex-1 px-3 py-2 border border-[#ddd] rounded-full mr-2 text-sm outline-none focus:border-[#007bff] transition-colors duration-200"
           disabled={isLoading}
         />
-        <button type="submit" className="send-button" disabled={isLoading}>
+        <button
+          type="submit"
+          className="px-5 py-2 bg-[#646cff] text-white border-none rounded-full cursor-pointer font-medium transition-colors duration-200 hover:bg-[#535bf2] disabled:opacity-50"
+          disabled={isLoading}
+        >
           Send
         </button>
       </form>
