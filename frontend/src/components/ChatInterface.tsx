@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 
 interface Message {
   id: number;
@@ -10,6 +10,15 @@ const ChatInterface: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,7 +71,7 @@ const ChatInterface: React.FC = () => {
 
   return (
     <div className="flex flex-col h-full bg-[#1a1a1a] rounded-lg pt-5 shadow-md">
-      <div className="flex-1 overflow-y-auto max-h-150 p-5 flex flex-col gap-3">
+      <div className="flex-1 overflow-y-auto min-h-150 max-h-150 p-5 flex flex-col gap-3">
         {messages.map((message) => (
           <div
             key={message.id}
@@ -84,6 +93,7 @@ const ChatInterface: React.FC = () => {
             </div>
           </div>
         )}
+        <div ref={messagesEndRef} />
       </div>
       <form
         onSubmit={handleSendMessage}
